@@ -38,7 +38,7 @@ if menu == "Nueva Planificación de Ruta":
         with col3:
             placa = st.text_input("Cod Int / Placa", value="LZB 96G")
             
-        st.subheader("2. Planificación de Salida")
+        st.subheader("2. Planificación de Salida y Retorno")
         col4, col5, col6 = st.columns(3)
         with col4:
             origen = st.text_input("Dir. Salida (Origen)", value="Mamonal km6 MZ H Lt 10")
@@ -47,11 +47,13 @@ if menu == "Nueva Planificación de Ruta":
         with col6:
             ciudad = st.text_input("Ciudad Salida", value="Cartagena")
             
-        col7, col8 = st.columns(2)
+        col7, col8, col_ret = st.columns(3)
         with col7:
             h_salida = st.time_input("Hora Salida", value=datetime.strptime("13:00", "%H:%M").time())
         with col8:
             h_llegada = st.time_input("Hora Llegada Estimada", value=datetime.strptime("14:00", "%H:%M").time())
+        with col_ret:
+            ruta_retorno = st.text_input("Ruta de Retorno", value="Misma ruta de origen")
             
         st.subheader("3. Personal Involucrado y Autorizaciones")
         col9, col10 = st.columns(2)
@@ -66,9 +68,8 @@ if menu == "Nueva Planificación de Ruta":
         col11, col12 = st.columns(2)
         with col11:
             escolta = st.selectbox("¿Requiere Escolta?", ["No", "Sí"])
-            conductor = st.text_input("Nombre del Conductor Principal")
         with col12:
-            ruta_retorno = st.text_input("Ruta de Retorno", value="Misma ruta de origen")
+            conductor = st.text_input("Nombre del Conductor Principal")
             
         observaciones = st.text_area("Observaciones de la Ruta / Recomendaciones de Seguridad", value="")
         
@@ -125,6 +126,7 @@ if menu == "Nueva Planificación de Ruta":
                 ("Cod Int / Placa:", str(placa)),
                 ("Origen:", str(origen)),
                 ("Destino:", str(destino)),
+                ("Ruta de Retorno:", str(ruta_retorno)),
                 ("Ciudad:", str(ciudad)),
                 ("Hora Salida:", str(h_salida)),
                 ("Hora Llegada:", str(h_llegada)),
@@ -134,7 +136,6 @@ if menu == "Nueva Planificación de Ruta":
                 ("Coord. / Supervisor:", str(coordinador)),
                 ("Conductor Ext.:", str(conductor_ext)),
                 ("Requiere Escolta:", str(escolta)),
-                ("Ruta Retorno:", str(ruta_retorno)),
                 ("Observaciones:", str(observaciones))
             ]
             
@@ -154,6 +155,7 @@ if menu == "Nueva Planificación de Ruta":
                 f"- Conductor: {conductor}\n"
                 f"- Origen: {origen}\n"
                 f"- Destino: {destino}\n"
+                f"- Ruta Retorno: {ruta_retorno}\n"
                 f"- Elabora: {quien_hace}\n"
                 f"- Ejecuta: {quien_ejecuta}\n"
                 f"- Coord/Supervisor: {coordinador}\n"
