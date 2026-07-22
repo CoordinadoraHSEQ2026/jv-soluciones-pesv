@@ -72,14 +72,14 @@ if menu == "Nueva Planificación de Ruta":
             
             st.success("✅ ¡Planificación guardada con éxito en el historial!")
             
-            # Generación del PDF con Encabezado Corporativo Oficial SGI-F-42
+            # Clase personalizada para el PDF con Encabezado SGI-F-42
             class PDF(FPDF):
                 def header(self):
-                    self.set_font('Arial', 'B', 9)
+                    self.set_font('Helvetica', 'B', 9)
                     self.cell(110, 8, 'PLANIFICACION DE LA RUTA PESV', 1, 0, 'L')
                     self.cell(80, 8, 'Codigo: SGI-F-42', 1, 1, 'L')
                     
-                    self.set_font('Arial', '', 8)
+                    self.set_font('Helvetica', '', 8)
                     self.cell(110, 7, 'SISTEMA DE GESTION INTEGRAL', 1, 0, 'L')
                     self.cell(80, 7, 'Version digital: 1', 1, 1, 'L')
                     
@@ -89,10 +89,10 @@ if menu == "Nueva Planificación de Ruta":
 
             pdf = PDF()
             pdf.add_page()
-            pdf.set_font("Arial", size=10)
+            pdf.set_font("Helvetica", size=10)
             
-            pdf.set_font("Arial", 'B', 11)
-            pdf.cell(190, 8, txt="DETALLE DE PLANIFICACION DE RUTA", ln=True, align='C')
+            pdf.set_font("Helvetica", 'B', 11)
+            pdf.cell(190, 8, text="DETALLE DE PLANIFICACION DE RUTA", new_x="LMARGIN", new_y="NEXT", align='C')
             pdf.ln(3)
             
             campos = [
@@ -109,16 +109,17 @@ if menu == "Nueva Planificación de Ruta":
             ]
             
             for label, val in campos:
-                pdf.set_font("Arial", 'B', 9)
+                pdf.set_font("Helvetica", 'B', 9)
                 pdf.cell(50, 7, label, 1)
-                pdf.set_font("Arial", '', 9)
-                pdf.cell(140, 7, val, 1, ln=True)
+                pdf.set_font("Helvetica", '', 9)
+                pdf.cell(140, 7, val, 1, new_x="LMARGIN", new_y="NEXT")
             
-            pdf_output = pdf.output(dest='S').encode('latin1')
+            # Corrección del método output para fpdf2
+            pdf_bytes = bytes(pdf.output())
             
             st.download_button(
                 label="📥 Descargar Formato PDF Oficial",
-                data=pdf_output,
+                data=pdf_bytes,
                 file_name=f"Planificacion_Ruta_{placa}_{fecha}.pdf",
                 mime="application/pdf"
             )
