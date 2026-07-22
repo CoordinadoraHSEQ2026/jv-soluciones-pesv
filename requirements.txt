@@ -1,0 +1,6 @@
+streamlit
+pandas
+pymupdf
+pypdfium2
+Pillow
+fpdf2
