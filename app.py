@@ -7,12 +7,17 @@ from fpdf import FPDF
 # Configuración de la página
 st.set_page_config(page_title="JV Soluciones - PESV", page_icon="🚚", layout="wide")
 
-# Inicializar el historial en la memoria del sistema si no existe
+# Inicializar el historial y el buffer del PDF en la memoria si no existen
 if "historial_rutas" not in st.session_state:
     st.session_state.historial_rutas = pd.DataFrame(columns=[
         "Fecha", "Vehiculo", "Placa", "Origen", "Destino", 
         "Ciudad", "Hora Salida", "Hora Llegada", "Conductor", "Observaciones"
     ])
+
+if "pdf_generado" not in st.session_state:
+    st.session_state.pdf_generado = None
+    st.session_state.pdf_nombre = ""
+    st.session_state.whatsapp_url = ""
 
 st.sidebar.title("🚚 JV Soluciones PESV")
 menu = st.sidebar.radio("Navegación", ["Nueva Planificación de Ruta", "Historial y Formatos"])
@@ -53,7 +58,7 @@ if menu == "Nueva Planificación de Ruta":
         submitted = st.form_submit_button("Generar Planificación y PDF")
         
         if submitted:
-            # Nueva entrada para el historial
+            # Guardar entrada en el historial
             nueva_ruta = pd.DataFrame([{
                 "Fecha": str(fecha),
                 "Vehiculo": vehiculo,
@@ -66,13 +71,9 @@ if menu == "Nueva Planificación de Ruta":
                 "Conductor": conductor,
                 "Observaciones": observaciones
             }])
-            
-            # Guardar en la memoria persistente del sistema
             st.session_state.historial_rutas = pd.concat([st.session_state.historial_rutas, nueva_ruta], ignore_index=True)
             
-            st.success("✅ ¡Planificación guardada con éxito en el historial!")
-            
-            # Clase personalizada para el PDF con Encabezado SGI-F-42
+            # Clase del PDF con Encabezado SGI-F-42
             class PDF(FPDF):
                 def header(self):
                     self.set_font('Helvetica', 'B', 9)
@@ -114,28 +115,32 @@ if menu == "Nueva Planificación de Ruta":
                 pdf.set_font("Helvetica", '', 9)
                 pdf.cell(140, 7, val, 1, new_x="LMARGIN", new_y="NEXT")
             
-            # Corrección del método output para fpdf2
-            pdf_bytes = bytes(pdf.output())
+            # Guardar PDF y WhatsApp en la sesión fuera del formulario
+            st.session_state.pdf_generado = bytes(pdf.output())
+            st.session_state.pdf_nombre = f"Planificacion_Ruta_{placa}_{fecha}.pdf"
             
-            st.download_button(
-                label="📥 Descargar Formato PDF Oficial",
-                data=pdf_bytes,
-                file_name=f"Planificacion_Ruta_{placa}_{fecha}.pdf",
-                mime="application/pdf"
-            )
-            
-            # Botón para compartir por WhatsApp
             whatsapp_text = f"🚚 *PLANIFICACION DE RUTA PESV (SGI-F-42)*\n- Vehículo: {vehiculo} ({placa})\n- Conductor: {conductor}\n- Origen: {origen}\n- Destino: {destino}\n- Fecha: {fecha} ({h_salida})"
             encoded_text = urllib.parse.quote(whatsapp_text)
-            whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_text}"
-            
-            st.markdown(f"""
-                <a href="{whatsapp_url}" target="_blank">
-                    <button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-size:15px; cursor:pointer; font-weight:bold; margin-top:10px;">
-                        💬 Compartir Planificación por WhatsApp
-                    </button>
-                </a>
-            """, unsafe_allow_html=True)
+            st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_text}"
+
+    # Mostrar las opciones de descarga y WhatsApp FUERA del formulario
+    if st.session_state.pdf_generado is not None:
+        st.success("✅ ¡Planificación guardada con éxito en el historial!")
+        
+        st.download_button(
+            label="📥 Descargar Formato PDF Oficial",
+            data=st.session_state.pdf_generado,
+            file_name=st.session_state.pdf_nombre,
+            mime="application/pdf"
+        )
+        
+        st.markdown(f"""
+            <a href="{st.session_state.whatsapp_url}" target="_blank">
+                <button style="background-color:#25D366; color:white; padding:10px 20px; border:none; border-radius:5px; font-size:15px; cursor:pointer; font-weight:bold; margin-top:10px;">
+                    💬 Compartir Planificación por WhatsApp
+                </button>
+            </a>
+        """, unsafe_allow_html=True)
 
 elif menu == "Historial y Formatos":
     st.title("📂 Historial de Planificaciones PESV")
