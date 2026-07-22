@@ -7,11 +7,13 @@ from fpdf import FPDF
 # Configuración de la página
 st.set_page_config(page_title="JV Soluciones - PESV", page_icon="🚚", layout="wide")
 
-# Inicializar el historial y el buffer del PDF en la memoria si no existen
+# Inicializar el historial y variables temporales en sesión
 if "historial_rutas" not in st.session_state:
     st.session_state.historial_rutas = pd.DataFrame(columns=[
-        "Fecha", "Vehiculo", "Placa", "Origen", "Destino", 
-        "Ciudad", "Hora Salida", "Hora Llegada", "Conductor", "Observaciones"
+        "Fecha", "Vehiculo", "Placa", "Origen", "Destino", "Ciudad", 
+        "Hora Salida", "Hora Llegada", "Conductor Principal", 
+        "Quien Elabora", "Quien Ejecuta", "Coordinador/Supervisor", 
+        "Conductor Externo", "Requiere Escolta", "Ruta Retorno", "Observaciones"
     ])
 
 if "pdf_generado" not in st.session_state:
@@ -51,8 +53,23 @@ if menu == "Nueva Planificación de Ruta":
         with col8:
             h_llegada = st.time_input("Hora Llegada Estimada", value=datetime.strptime("14:00", "%H:%M").time())
             
-        st.subheader("3. Conductor y Observaciones")
-        conductor = st.text_input("Nombre del Conductor", value="")
+        st.subheader("3. Personal Involucrado y Autorizaciones")
+        col9, col10 = st.columns(2)
+        with col9:
+            quien_hace = st.text_input("Nombre de quien hace la ruta")
+            quien_ejecuta = st.text_input("Nombre de quien ejecuta la ruta")
+        with col10:
+            coordinador = st.text_input("Nombre del Coordinador de Operaciones / Supervisor de Patio")
+            conductor_ext = st.text_input("Nombre del conductor (si es vehículo externo)")
+
+        st.subheader("4. Detalles Adicionales y Seguridad")
+        col11, col12 = st.columns(2)
+        with col11:
+            escolta = st.selectbox("¿Requiere Escolta?", ["No", "Sí"])
+            conductor = st.text_input("Nombre del Conductor Principal")
+        with col12:
+            ruta_retorno = st.text_input("Ruta de Retorno", value="Misma ruta de origen")
+            
         observaciones = st.text_area("Observaciones de la Ruta / Recomendaciones de Seguridad", value="")
         
         submitted = st.form_submit_button("Generar Planificación y PDF")
@@ -68,7 +85,13 @@ if menu == "Nueva Planificación de Ruta":
                 "Ciudad": ciudad,
                 "Hora Salida": str(h_salida),
                 "Hora Llegada": str(h_llegada),
-                "Conductor": conductor,
+                "Conductor Principal": conductor,
+                "Quien Elabora": quien_hace,
+                "Quien Ejecuta": quien_ejecuta,
+                "Coordinador/Supervisor": coordinador,
+                "Conductor Externo": conductor_ext,
+                "Requiere Escolta": escolta,
+                "Ruta Retorno": ruta_retorno,
                 "Observaciones": observaciones
             }])
             st.session_state.historial_rutas = pd.concat([st.session_state.historial_rutas, nueva_ruta], ignore_index=True)
@@ -105,25 +128,41 @@ if menu == "Nueva Planificación de Ruta":
                 ("Ciudad:", str(ciudad)),
                 ("Hora Salida:", str(h_salida)),
                 ("Hora Llegada:", str(h_llegada)),
-                ("Conductor:", str(conductor)),
+                ("Conductor Principal:", str(conductor)),
+                ("Elaborado Por:", str(quien_hace)),
+                ("Ejecutado Por:", str(quien_ejecuta)),
+                ("Coord. / Supervisor:", str(coordinador)),
+                ("Conductor Ext.:", str(conductor_ext)),
+                ("Requiere Escolta:", str(escolta)),
+                ("Ruta Retorno:", str(ruta_retorno)),
                 ("Observaciones:", str(observaciones))
             ]
             
             for label, val in campos:
                 pdf.set_font("Helvetica", 'B', 9)
-                pdf.cell(50, 7, label, 1)
+                pdf.cell(60, 7, label, 1)
                 pdf.set_font("Helvetica", '', 9)
-                pdf.cell(140, 7, val, 1, new_x="LMARGIN", new_y="NEXT")
+                pdf.cell(130, 7, val, 1, new_x="LMARGIN", new_y="NEXT")
             
-            # Guardar PDF y WhatsApp en la sesión fuera del formulario
+            # Guardar PDF y URL de WhatsApp en sesión
             st.session_state.pdf_generado = bytes(pdf.output())
             st.session_state.pdf_nombre = f"Planificacion_Ruta_{placa}_{fecha}.pdf"
             
-            whatsapp_text = f"🚚 *PLANIFICACION DE RUTA PESV (SGI-F-42)*\n- Vehículo: {vehiculo} ({placa})\n- Conductor: {conductor}\n- Origen: {origen}\n- Destino: {destino}\n- Fecha: {fecha} ({h_salida})"
+            whatsapp_text = (
+                f"🚚 *PLANIFICACION DE RUTA PESV (SGI-F-42)*\n"
+                f"- Vehículo: {vehiculo} ({placa})\n"
+                f"- Conductor: {conductor}\n"
+                f"- Origen: {origen}\n"
+                f"- Destino: {destino}\n"
+                f"- Elabora: {quien_hace}\n"
+                f"- Ejecuta: {quien_ejecuta}\n"
+                f"- Coord/Supervisor: {coordinador}\n"
+                f"- Fecha: {fecha} ({h_salida})"
+            )
             encoded_text = urllib.parse.quote(whatsapp_text)
             st.session_state.whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_text}"
 
-    # Mostrar las opciones de descarga y WhatsApp FUERA del formulario
+    # Opciones de descarga fuera del formulario
     if st.session_state.pdf_generado is not None:
         st.success("✅ ¡Planificación guardada con éxito en el historial!")
         
