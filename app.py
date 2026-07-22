@@ -10,9 +10,9 @@ st.set_page_config(page_title="JV Soluciones - PESV", page_icon="🚚", layout="
 # Inicializar historial y variables de sesión
 if "historial_rutas" not in st.session_state:
     st.session_state.historial_rutas = pd.DataFrame(columns=[
-        "Fecha", "Vehiculo", "Placa", "Origen", "Destino", "Ciudad Salida", 
-        "Hora Salida ID", "Hora Llegada ID", 
-        "Direccion Retorno", "Hora Salida Retorno", "Hora Llegada Retorno",
+        "Fecha", "Vehiculo", "Placa", "Origen Ida", "Destino Ida", "Ciudad", 
+        "Hora Salida Ida", "Hora Llegada Ida", 
+        "Origen Retorno", "Destino Retorno", "Hora Salida Retorno", "Hora Llegada Retorno",
         "Conductor Principal", "Quien Elabora", "Quien Ejecuta", 
         "Coordinador/Supervisor", "Conductor Externo", "Requiere Escolta", "Observaciones"
     ])
@@ -40,28 +40,32 @@ if menu == "Nueva Planificación de Ruta":
         with col3:
             placa = st.text_input("Cod Int / Placa", value="LZB 96G")
             
-        st.subheader("2. Planificación de Salida (Ida)")
+        st.subheader("2. Planificación de Ruta de IDA")
         col4, col5, col6 = st.columns(3)
         with col4:
-            origen = st.text_input("Dir. Salida (Origen)", value="Mamonal km6 MZ H Lt 10")
+            origen_ida = st.text_input("Dir. Salida (Origen Ida)", value="Mamonal km6 MZ H Lt 10")
         with col5:
-            destino = st.text_input("Dir. Destino", value="Oficinas seguros mundial")
+            destino_ida = st.text_input("Dir. Destino (Llegada Ida)", value="Oficinas seguros mundial")
         with col6:
-            ciudad = st.text_input("Ciudad Salida", value="Cartagena")
+            ciudad = st.text_input("Ciudad / Municipio", value="Cartagena")
             
         col7, col8 = st.columns(2)
         with col7:
-            h_salida = st.time_input("Hora Salida (Ida)", value=datetime.strptime("13:00", "%H:%M").time())
+            h_salida_ida = st.time_input("Hora Salida (Ida)", value=datetime.strptime("13:00", "%H:%M").time())
         with col8:
-            h_llegada = st.time_input("Hora Llegada Estimada (Ida)", value=datetime.strptime("14:00", "%H:%M").time())
+            h_llegada_ida = st.time_input("Hora Llegada Estimada (Ida)", value=datetime.strptime("14:00", "%H:%M").time())
 
-        st.subheader("3. Planificación de Retorno")
-        col_r1, col_r2, col_r3 = st.columns(3)
+        st.subheader("3. Planificación de Ruta de RETORNO")
+        col_r1, col_r2 = st.columns(2)
         with col_r1:
-            dir_retorno = st.text_input("Dirección de Retorno", value="Mamonal km6 MZ H Lt 10")
+            origen_ret = st.text_input("Dir. Salida (Origen Retorno)", value="Oficinas seguros mundial")
         with col_r2:
-            h_salida_ret = st.time_input("Hora Salida (Retorno)", value=datetime.strptime("16:00", "%H:%M").time())
+            destino_ret = st.text_input("Dir. Destino (Llegada Retorno)", value="Mamonal km6 MZ H Lt 10")
+
+        col_r3, col_r4 = st.columns(2)
         with col_r3:
+            h_salida_ret = st.time_input("Hora Salida (Retorno)", value=datetime.strptime("16:00", "%H:%M").time())
+        with col_r4:
             h_llegada_ret = st.time_input("Hora Llegada Estimada (Retorno)", value=datetime.strptime("17:00", "%H:%M").time())
 
         st.subheader("4. Personal Involucrado y Autorizaciones")
@@ -90,12 +94,13 @@ if menu == "Nueva Planificación de Ruta":
                 "Fecha": str(fecha),
                 "Vehiculo": vehiculo,
                 "Placa": placa,
-                "Origen": origen,
-                "Destino": destino,
-                "Ciudad Salida": ciudad,
-                "Hora Salida ID": str(h_salida),
-                "Hora Llegada ID": str(h_llegada),
-                "Direccion Retorno": dir_retorno,
+                "Origen Ida": origen_ida,
+                "Destino Ida": destino_ida,
+                "Ciudad": ciudad,
+                "Hora Salida Ida": str(h_salida_ida),
+                "Hora Llegada Ida": str(h_llegada_ida),
+                "Origen Retorno": origen_ret,
+                "Destino Retorno": destino_ret,
                 "Hora Salida Retorno": str(h_salida_ret),
                 "Hora Llegada Retorno": str(h_llegada_ret),
                 "Conductor Principal": conductor,
@@ -108,13 +113,14 @@ if menu == "Nueva Planificación de Ruta":
             }])
             st.session_state.historial_rutas = pd.concat([st.session_state.historial_rutas, nueva_ruta], ignore_index=True)
             
-            # Crear enlaces de Google Maps para Ida y Retorno
-            orig_encoded = urllib.parse.quote(f"{origen}, {ciudad}")
-            dest_encoded = urllib.parse.quote(f"{destino}, {ciudad}")
-            retorno_encoded = urllib.parse.quote(f"{dir_retorno}, {ciudad}")
+            # Enlaces de Google Maps para Ida y Retorno
+            orig_ida_enc = urllib.parse.quote(f"{origen_ida}, {ciudad}")
+            dest_ida_enc = urllib.parse.quote(f"{destino_ida}, {ciudad}")
+            orig_ret_enc = urllib.parse.quote(f"{origen_ret}, {ciudad}")
+            dest_ret_enc = urllib.parse.quote(f"{destino_ret}, {ciudad}")
             
-            url_ida = f"https://www.google.com/maps/dir/?api=1&origin={orig_encoded}&destination={dest_encoded}"
-            url_retorno = f"https://www.google.com/maps/dir/?api=1&origin={dest_encoded}&destination={retorno_encoded}"
+            url_ida = f"https://www.google.com/maps/dir/?api=1&origin={orig_ida_enc}&destination={dest_ida_enc}"
+            url_retorno = f"https://www.google.com/maps/dir/?api=1&origin={orig_ret_enc}&destination={dest_ret_enc}"
             
             st.session_state.url_ida = url_ida
             st.session_state.url_retorno = url_retorno
@@ -145,15 +151,16 @@ if menu == "Nueva Planificación de Ruta":
                 ("Fecha:", str(fecha)),
                 ("Equipo / Vehiculo:", str(vehiculo)),
                 ("Cod Int / Placa:", str(placa)),
-                ("Origen (Salida):", str(origen)),
-                ("Destino:", str(destino)),
                 ("Ciudad:", str(ciudad)),
-                ("Hora Salida (Ida):", str(h_salida)),
-                ("Hora Llegada (Ida):", str(h_llegada)),
+                ("Origen (Salida Ida):", str(origen_ida)),
+                ("Destino (Llegada Ida):", str(destino_ida)),
+                ("Hora Salida (Ida):", str(h_salida_ida)),
+                ("Hora Llegada (Ida):", str(h_llegada_ida)),
                 ("Mapa Ruta Ida:", url_ida),
-                ("Direccion Retorno:", str(dir_retorno)),
-                ("Hora Salida (Ret):", str(h_salida_ret)),
-                ("Hora Llegada (Ret):", str(h_llegada_ret)),
+                ("Origen (Salida Retorno):", str(origen_ret)),
+                ("Destino (Llegada Retorno):", str(destino_ret)),
+                ("Hora Salida (Retorno):", str(h_salida_ret)),
+                ("Hora Llegada (Retorno):", str(h_llegada_ret)),
                 ("Mapa Ruta Retorno:", url_retorno),
                 ("Conductor Principal:", str(conductor)),
                 ("Elaborado Por:", str(quien_hace)),
@@ -166,19 +173,18 @@ if menu == "Nueva Planificación de Ruta":
             
             for label, val in campos:
                 pdf.set_font("Helvetica", 'B', 9)
-                pdf.cell(50, 7, label, 1)
+                pdf.cell(55, 7, label, 1)
                 
                 # Si es un enlace a mapa, ponerlo azul y clicable
                 if label.startswith("Mapa Ruta"):
                     pdf.set_font("Helvetica", 'U', 9)
                     pdf.set_text_color(0, 0, 255) # Azul
-                    pdf.cell(140, 7, "Clic aqui para abrir en Google Maps", 1, new_x="LMARGIN", new_y="NEXT", link=val)
+                    pdf.cell(135, 7, "Clic aqui para abrir en Google Maps", 1, new_x="LMARGIN", new_y="NEXT", link=val)
                     pdf.set_text_color(0, 0, 0)   # Volver a negro
                 else:
                     pdf.set_font("Helvetica", '', 9)
-                    # Limitar largo por si el texto es muy extenso para una celda
-                    texto = val if len(val) < 85 else val[:82] + "..."
-                    pdf.cell(140, 7, texto, 1, new_x="LMARGIN", new_y="NEXT")
+                    texto = val if len(val) < 80 else val[:77] + "..."
+                    pdf.cell(135, 7, texto, 1, new_x="LMARGIN", new_y="NEXT")
             
             # Guardar PDF en sesión
             st.session_state.pdf_generado = bytes(pdf.output())
